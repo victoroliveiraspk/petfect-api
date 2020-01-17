@@ -13,6 +13,7 @@ class Pet extends Model
         'avatar_filename',
         'species_id',
         'size_id',
-        'genre_id'
+        'genre_id',
+        'city_id'
     ];
 }

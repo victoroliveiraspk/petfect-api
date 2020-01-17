@@ -23,7 +23,8 @@ class PetController extends Controller
             'avatar' => 'required|image|mimes:jpeg,png,jpg,svg|max:2048',
             'species_id' => 'required|integer|exists:species,id',
             'size_id'=> 'required|integer|exists:sizes,id',
-            'genre_id'=> 'required|integer|exists:genres,id'
+            'genre_id'=> 'required|integer|exists:genres,id',
+            'city_id' => 'required|integer|exists:cities,id'
         ]);
 
         $uuid4 = Uuid::uuid4();
@@ -58,7 +59,8 @@ class PetController extends Controller
             'avatar' => 'image|mimes:jpeg,png,jpg,svg|max:2048',
             'species_id' => 'integer|exists:species,id',
             'size_id'=> 'integer|exists:sizes,id',
-            'genre_id'=> 'required|integer|exists:genres,id'
+            'genre_id'=> 'integer|exists:genres,id',
+            'city_id' => 'integer|exists:cities,id'
         ]);
 
         $pet = Pet::find($id);
