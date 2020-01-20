@@ -5,14 +5,16 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\File;
+use Illuminate\Support\Facades\DB;
 use Ramsey\Uuid\Uuid;
 use App\Models\Pet;
+use App\Models\VeterinaryCare;
 
 class PetController extends Controller
 {
     public function index()
     {
-        return response()->json(Pet::all(), 200);
+        return response()->json(Pet::with('veterinary_care')->get(), 200);
     }
 
     public function store(Request $request)
@@ -24,25 +26,49 @@ class PetController extends Controller
             'species_id' => 'required|integer|exists:species,id',
             'size_id'=> 'required|integer|exists:sizes,id',
             'genre_id'=> 'required|integer|exists:genres,id',
-            'city_id' => 'required|integer|exists:cities,id'
+            'city_id' => 'required|integer|exists:cities,id',
+            'castrated' => 'required|boolean',
+            'vaccinated' => 'required|boolean',
+            'dewormed' => 'required|boolean',
+            'need_special_care' => 'required|boolean'
         ]);
 
         $uuid4 = Uuid::uuid4();
         $filename = $uuid4->toString() . '.' . $request->file('avatar')->extension();
+        
+        $request->merge(['avatar_filename' => $filename]);
 
-        Storage::putFileAs('avatars', $request->file('avatar'), $filename);
+        $avatar_path = Storage::putFileAs('avatars', $request->file('avatar'), $filename);
+        
+        DB::beginTransaction();
 
-        $petValues = array_merge($request->all(), ['avatar_filename' => $filename]);
+        try {
+            $pet = new Pet($request->all());
+            $pet->save();
 
-        $pet = new Pet($petValues);
-        $pet->save();
+            $request->merge(['pet_id' => $pet->id]);
 
-        return response()->json($pet, 201);
+            $veterinaryCare = new VeterinaryCare($request->all());
+            $veterinaryCare->save();
+
+            DB::commit();
+
+            $pet = Pet::with('veterinary_care')->where('id', $pet->id)->first();
+
+            return response()->json($pet, 201);
+        }
+        catch(\Throwable $e) {
+            DB::rollBack();
+
+            Storage::delete($avatar_path);
+
+            throw $e;
+        }
     }
 
     public function show($id)
     {
-        $pet = Pet::find($id);
+        $pet = Pet::with('veterinary_care')->where('id', $id)->first();
         
         if (!$pet) {
             return response()->json(null, 404);
@@ -73,10 +99,27 @@ class PetController extends Controller
             Storage::putFileAs('avatars', $request->file('avatar'), $pet->avatar_filename);
         }
 
-        $pet->update($request->all());
-        $pet->save();
+        DB::beginTransaction();
 
-        return response()->json($pet, 200);
+        try {
+            $pet->update($request->all());
+            $pet->save();
+
+            $veterinaryCare = VeterinaryCare::where('pet_id', $pet->id)->first();
+            $veterinaryCare->update($request->all());
+            $veterinaryCare->save();
+
+            DB::commit();
+
+            $pet = Pet::with('veterinary_care')->where('id', $id)->first();
+
+            return response()->json($pet, 200);
+        }
+        catch(\Throwable $e) {
+            DB::rollBack();
+
+            throw $e;
+        }
     }
 
     public function destroy($id)
@@ -87,10 +130,24 @@ class PetController extends Controller
             return response()->json(null, 404);
         }
 
-        Storage::delete('avatars/' . $pet->avatar_filename);
+        DB::beginTransaction();
 
-        $pet->delete();
+        try {
+            $veterinaryCare = VeterinaryCare::where('pet_id' , $pet->id)->first();
+            $veterinaryCare->delete();
 
-        return response()->json(null, 204);
+            $pet->delete();
+
+            DB::commit();
+
+            Storage::delete('avatars/' . $pet->avatar_filename);
+
+            return response()->json(null, 204);
+        }
+        catch(\Throwable $e) {
+            DB::rollBack();
+
+            throw $e;
+        }
     }
 }

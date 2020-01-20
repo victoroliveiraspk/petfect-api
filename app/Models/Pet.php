@@ -16,4 +16,9 @@ class Pet extends Model
         'genre_id',
         'city_id'
     ];
+
+    public function veterinary_care()
+    {
+        return $this->hasOne('App\Models\VeterinaryCare', 'pet_id');
+    }
 }
