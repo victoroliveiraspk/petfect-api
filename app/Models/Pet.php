@@ -31,4 +31,9 @@ class Pet extends Model
     {
         return $this->hasOne('App\Models\LiveWellIn', 'pet_id');
     }
+
+    public function sociable_with()
+    {
+        return $this->hasOne('App\Models\SociableWith', 'pet_id');
+    }
 }
