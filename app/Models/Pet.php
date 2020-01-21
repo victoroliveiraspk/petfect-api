@@ -26,4 +26,9 @@ class Pet extends Model
     {
         return $this->hasOne('App\Models\Temperament', 'pet_id');
     }
+
+    public function live_well_in()
+    {
+        return $this->hasOne('App\Models\LiveWellIn', 'pet_id');
+    }
 }

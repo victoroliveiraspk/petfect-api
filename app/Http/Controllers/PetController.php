@@ -10,12 +10,13 @@ use Ramsey\Uuid\Uuid;
 use App\Models\Pet;
 use App\Models\VeterinaryCare;
 use App\Models\Temperament;
+use App\Models\LiveWellIn;
 
 class PetController extends Controller
 {
     public function index()
     {
-        return response()->json(Pet::with('veterinary_care', 'temperament')->get(), 200);
+        return response()->json(Pet::with('veterinary_care', 'temperament', 'live_well_in')->get(), 200);
     }
 
     public function store(Request $request)
@@ -39,7 +40,9 @@ class PetController extends Controller
             'sociable' => 'required|boolean',
             'aloof' => 'required|boolean',
             'independent' => 'required|boolean',
-            'needy' => 'required|boolean'
+            'needy' => 'required|boolean',
+            'house_with_backyard' => 'required|boolean',
+            'apartment' => 'required|boolean'
         ]);
 
         $uuid4 = Uuid::uuid4();
@@ -63,9 +66,12 @@ class PetController extends Controller
             $temperament = new Temperament($request->all());
             $temperament->save();
 
+            $liveWellIn = new LiveWellIn($request->all());
+            $liveWellIn->save();
+
             DB::commit();
 
-            $pet = Pet::with('veterinary_care', 'temperament')->where('id', $pet->id)->first();
+            $pet = Pet::with('veterinary_care', 'temperament', 'live_well_in')->where('id', $pet->id)->first();
 
             return response()->json($pet, 201);
         }
@@ -80,7 +86,7 @@ class PetController extends Controller
 
     public function show($id)
     {
-        $pet = Pet::with('veterinary_care', 'temperament')->where('id', $id)->first();
+        $pet = Pet::with('veterinary_care', 'temperament', 'live_well_in')->where('id', $id)->first();
         
         if (!$pet) {
             return response()->json(null, 404);
@@ -110,7 +116,9 @@ class PetController extends Controller
             'sociable' => 'boolean',
             'aloof' => 'boolean',
             'independent' => 'boolean',
-            'needy' => 'boolean'
+            'needy' => 'boolean',
+            'house_with_backyard' => 'boolean',
+            'apartment' => 'boolean'
         ]);
 
         $pet = Pet::find($id);
@@ -137,9 +145,13 @@ class PetController extends Controller
             $temperament->update($request->all());
             $temperament->save();
 
+            $liveWellIn = LiveWellIn::where('pet_id', $pet->id)->first();
+            $liveWellIn->update($request->all());
+            $liveWellIn->save();
+
             DB::commit();
 
-            $pet = Pet::with('veterinary_care', 'temperament')->where('id', $id)->first();
+            $pet = Pet::with('veterinary_care', 'temperament', 'live_well_in')->where('id', $id)->first();
 
             return response()->json($pet, 200);
         }
@@ -166,6 +178,9 @@ class PetController extends Controller
 
             $temperament = Temperament::where('pet_id' , $pet->id)->first();
             $temperament->delete();
+
+            $liveWellIn = LiveWellIn::where('pet_id' , $pet->id)->first();
+            $liveWellIn->delete();
 
             $pet->delete();
 
