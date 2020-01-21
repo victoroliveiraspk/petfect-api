@@ -21,4 +21,9 @@ class Pet extends Model
     {
         return $this->hasOne('App\Models\VeterinaryCare', 'pet_id');
     }
+
+    public function temperament()
+    {
+        return $this->hasOne('App\Models\Temperament', 'pet_id');
+    }
 }
