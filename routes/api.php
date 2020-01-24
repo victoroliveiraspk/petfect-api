@@ -1,5 +1,10 @@
 <?php
 
+Route::prefix('auth')->group(function() {
+    Route::post('login', 'AuthController@login');
+    Route::post('register', 'AuthController@register');
+});
+
 Route::prefix('pets')->group(function() {
     Route::get('/', 'PetController@index');
     Route::get('/{id}', 'PetController@show');
