@@ -5,10 +5,12 @@ Route::prefix('auth')->group(function() {
     Route::post('register', 'AuthController@register');
 });
 
-Route::prefix('pets')->group(function() {
+Route::group(['prefix' => 'pets'], function() {
     Route::get('/', 'PetController@index');
     Route::get('/{id}', 'PetController@show');
-    Route::post('/', 'PetController@store');
-    Route::put('/{id}', 'PetController@update');
-    Route::delete('/{id}', 'PetController@destroy');
+    Route::group(['middleware' => 'auth:api'], function() {
+        Route::post('/', 'PetController@store');
+        Route::put('/{id}', 'PetController@update');
+        Route::delete('/{id}', 'PetController@destroy');
+    });
 });

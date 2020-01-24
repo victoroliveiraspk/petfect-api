@@ -52,8 +52,11 @@ class PetController extends Controller
 
         $uuid4 = Uuid::uuid4();
         $filename = $uuid4->toString() . '.' . $request->file('avatar')->extension();
-        
-        $request->merge(['avatar_filename' => $filename]);
+
+        $request->merge([
+            'avatar_filename' => $filename,
+            'user_id' => auth()->user()->id
+        ]);
 
         $avatar_path = Storage::putFileAs('avatars', $request->file('avatar'), $filename);
         
@@ -134,9 +137,15 @@ class PetController extends Controller
         ]);
 
         $pet = Pet::find($id);
-        
+            
         if (!$pet) {
             return response()->json(null, 404);
+        }
+
+        $user = auth()->user();
+
+        if ($pet->user_id != $user->id) {
+            return response()->json(null, 401);
         }
 
         if ($request->hasFile('avatar')) {
@@ -146,6 +155,8 @@ class PetController extends Controller
         DB::beginTransaction();
 
         try {
+            $request->merge(['user_id' => auth()->user()->id]);
+
             $pet->update($request->all());
             $pet->save();
 
@@ -184,6 +195,10 @@ class PetController extends Controller
 
         if (!$pet) {
             return response()->json(null, 404);
+        }
+
+        if (auth()->user()->id != $pet->user_id) {
+            return response()->json(null, 401);
         }
 
         DB::beginTransaction();

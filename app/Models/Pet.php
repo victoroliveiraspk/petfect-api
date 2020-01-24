@@ -14,7 +14,8 @@ class Pet extends Model
         'species_id',
         'size_id',
         'genre_id',
-        'city_id'
+        'city_id',
+        'user_id'
     ];
 
     public function veterinary_care()
